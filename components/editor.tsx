@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
 import MonacoEditor, {
   EditorProps as MonacoEditorProps,
-} from '@monaco-editor/react';
-import { ChangeEventHandler, useState } from 'react';
-import Dropdown from './dropdown';
-import Button from './button';
-import Share from './vector/share';
+} from "@monaco-editor/react";
+import { ChangeEventHandler, useEffect, useState } from "react";
+import Dropdown from "./dropdown";
+import Button from "./button";
+import Share from "./vector/share";
+import { Code } from "@prisma/client";
 
 const DEFAULT_CONTENT = `<html>
 <head>
@@ -29,38 +30,49 @@ const DEFAULT_CONTENT = `<html>
 
 const THEME_OPTIONS = [
   {
-    label: 'Light',
-    value: 'light',
+    label: "Light",
+    value: "light",
   },
   {
-    label: 'VS Dark',
-    value: 'vs-dark',
+    label: "VS Dark",
+    value: "vs-dark",
   },
 ];
 
 const LANGUAGE_OPTIONS = [
   {
-    label: 'HTML',
-    value: 'html',
+    label: "HTML",
+    value: "html",
   },
   {
-    label: 'CSS',
-    value: 'css',
+    label: "CSS",
+    value: "css",
   },
   {
-    label: 'JavaScript',
-    value: 'javascript',
+    label: "JavaScript",
+    value: "javascript",
   },
 ];
 
-interface EditorProps extends MonacoEditorProps {}
+interface EditorProps extends MonacoEditorProps {
+  code?: Code;
+}
 
 export default function Editor(props: EditorProps) {
-  const [value, setValue] = useState<string>(DEFAULT_CONTENT);
-  const [theme, setTheme] = useState<EditorProps['theme']>(
-    props.theme ?? 'light'
+  const [value, setValue] = useState<string>(
+    props.code?.value ?? DEFAULT_CONTENT
   );
-  const [language, setLanguage] = useState<string>('html');
+  const [theme, setTheme] = useState<EditorProps["theme"]>(
+    props.theme ?? "light"
+  );
+  const [language, setLanguage] = useState<string>(
+    props.code?.language ?? "html"
+  );
+
+  // useEffect(() => {
+  //   setValue(props.code?.value ?? DEFAULT_CONTENT);
+  //   setLanguage(props.code?.language ?? "html");
+  // }, [props.code]);
 
   const handleThemeChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
     setTheme(event.target.value);
@@ -70,19 +82,19 @@ export default function Editor(props: EditorProps) {
     event
   ) => {
     setLanguage(event.target.value);
-    setValue('');
+    setValue("");
   };
 
   const handleShare = async () => {
     if (value.length === 0) {
-      alert('You cannot share a blank code!');
+      alert("You cannot share a blank code!");
 
       return;
     }
 
-    const res = await fetch('/', {
-      method: 'POST',
-      body: JSON.stringify({ value }),
+    const res = await fetch("/api/share", {
+      method: "POST",
+      body: JSON.stringify({ value, language }),
     });
 
     const json = await res.json();
@@ -93,7 +105,7 @@ export default function Editor(props: EditorProps) {
   return (
     <div
       className={`w-2/3 mx-auto mt-2 rounded-xl py-4 ${
-        theme === 'vs-dark' ? 'bg-[#1e1e1e]' : 'bg-neutral-100'
+        theme === "vs-dark" ? "bg-[#1e1e1e]" : "bg-neutral-100"
       }`}
     >
       <MonacoEditor
@@ -105,7 +117,7 @@ export default function Editor(props: EditorProps) {
         wrapperProps={{
           className: `p-4 rounded-xl`,
         }}
-        onChange={(newValue) => setValue(newValue || '')}
+        onChange={(newValue) => setValue(newValue || "")}
         {...props}
       />
 
@@ -114,12 +126,14 @@ export default function Editor(props: EditorProps) {
           <Dropdown
             name="language"
             options={LANGUAGE_OPTIONS}
+            value={language}
             onChange={handleLanguageChange}
           />
 
           <Dropdown
             name="theme"
             options={THEME_OPTIONS}
+            value={theme}
             onChange={handleThemeChange}
           />
         </div>
