@@ -8,6 +8,8 @@ import Dropdown from "./dropdown";
 import Button from "./button";
 import Share from "./vector/share";
 import { Code } from "@prisma/client";
+import Link from "./vector/link";
+import { useRouter } from "next/navigation";
 
 const DEFAULT_CONTENT = `<html>
 <head>
@@ -59,20 +61,21 @@ interface EditorProps extends MonacoEditorProps {
 }
 
 export default function Editor(props: EditorProps) {
+  const router = useRouter();
+
   const [value, setValue] = useState<string>(
     props.code?.value ?? DEFAULT_CONTENT
   );
+
   const [theme, setTheme] = useState<EditorProps["theme"]>(
     props.theme ?? "light"
   );
+
   const [language, setLanguage] = useState<string>(
     props.code?.language ?? "html"
   );
 
-  // useEffect(() => {
-  //   setValue(props.code?.value ?? DEFAULT_CONTENT);
-  //   setLanguage(props.code?.language ?? "html");
-  // }, [props.code]);
+  const [codeId, setCodeId] = useState(props.code?.id);
 
   const handleThemeChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
     setTheme(event.target.value);
@@ -97,9 +100,11 @@ export default function Editor(props: EditorProps) {
       body: JSON.stringify({ value, language }),
     });
 
-    const json = await res.json();
+    const code = await res.json();
 
-    console.log(json);
+    setCodeId(code.id);
+
+    router.push(`/${code.id}`);
   };
 
   return (
@@ -138,8 +143,24 @@ export default function Editor(props: EditorProps) {
           />
         </div>
 
-        <div>
-          <Button leftComponent={<Share />} onClick={handleShare}>
+        {/* TODO: Enable share button if `value` is changed */}
+        <div className="flex gap-4 items-center">
+          {codeId && (
+            <button
+              className="inline-flex items-center  gap-2 text-neutral-200 font-medium cursor-pointer"
+              onClick={() =>
+                navigator.clipboard.writeText(`http://localhost:3000/${codeId}`)
+              }
+            >
+              <Link /> {`/${codeId}`}
+            </button>
+          )}
+
+          <Button
+            disabled={!!codeId}
+            leftComponent={<Share />}
+            onClick={handleShare}
+          >
             Share
           </Button>
         </div>
