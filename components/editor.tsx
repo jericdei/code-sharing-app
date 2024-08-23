@@ -10,51 +10,11 @@ import Share from "./vector/share";
 import { Code } from "@prisma/client";
 import Link from "./vector/link";
 import { useRouter } from "next/navigation";
-
-const DEFAULT_CONTENT = `<html>
-<head>
-  <title>HTML Sample</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <style type="text/css">
-    h1 {
-      color: #CCA3A3;
-    }
-  </style>
-  <script type="text/javascript">
-    alert("I am a sample... visit devChallengs.io for more projects");
-  </script>
-</head>
-<body>
-  <h1>Heading No.1</h1>
-  <input disabled type="button" value="Click me" />
-</body>
-</html>`;
-
-const THEME_OPTIONS = [
-  {
-    label: "Light",
-    value: "light",
-  },
-  {
-    label: "VS Dark",
-    value: "vs-dark",
-  },
-];
-
-const LANGUAGE_OPTIONS = [
-  {
-    label: "HTML",
-    value: "html",
-  },
-  {
-    label: "CSS",
-    value: "css",
-  },
-  {
-    label: "JavaScript",
-    value: "javascript",
-  },
-];
+import {
+  DEFAULT_CONTENT,
+  LANGUAGE_OPTIONS,
+  THEME_OPTIONS,
+} from "@/lib/constants";
 
 interface EditorProps extends MonacoEditorProps {
   code?: Code;
@@ -62,6 +22,8 @@ interface EditorProps extends MonacoEditorProps {
 
 export default function Editor(props: EditorProps) {
   const router = useRouter();
+
+  const [currentUrl, setCurrentUrl] = useState("");
 
   const [value, setValue] = useState<string>(
     props.code?.value ?? DEFAULT_CONTENT
@@ -76,6 +38,19 @@ export default function Editor(props: EditorProps) {
   );
 
   const [codeId, setCodeId] = useState(props.code?.id);
+  const [shareButtonDisabled, setShareButtonDisabled] = useState(false);
+
+  useEffect(() => {
+    if (process) {
+      setCurrentUrl(window.location.origin);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (props.code?.value) {
+      setShareButtonDisabled(props.code.value === value);
+    }
+  }, [value, props.code?.value]);
 
   const handleThemeChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
     setTheme(event.target.value);
@@ -109,7 +84,7 @@ export default function Editor(props: EditorProps) {
 
   return (
     <div
-      className={`w-2/3 mx-auto mt-2 rounded-xl py-4 ${
+      className={`w-11/12 xl:w-2/3 mx-auto mt-2 rounded-xl py-4 ${
         theme === "vs-dark" ? "bg-[#1e1e1e]" : "bg-neutral-100"
       }`}
     >
@@ -143,21 +118,20 @@ export default function Editor(props: EditorProps) {
           />
         </div>
 
-        {/* TODO: Enable share button if `value` is changed */}
         <div className="flex gap-4 items-center">
           {codeId && (
             <button
-              className="inline-flex items-center  gap-2 text-neutral-200 font-medium cursor-pointer"
+              className="inline-flex items-center text-sm gap-2 text-neutral-200 font-medium cursor-pointer"
               onClick={() =>
-                navigator.clipboard.writeText(`http://localhost:3000/${codeId}`)
+                navigator.clipboard.writeText(`${currentUrl}/${codeId}`)
               }
             >
-              <Link /> {`/${codeId}`}
+              <Link /> {`.../${codeId.substring(0, 10)}`}
             </button>
           )}
 
           <Button
-            disabled={!!codeId}
+            disabled={shareButtonDisabled}
             leftComponent={<Share />}
             onClick={handleShare}
           >

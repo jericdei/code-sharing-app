@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Code {
-  id       String @id @default(cuid())
+  id       String @id @default(nanoid())
   language String
   value    String
 
